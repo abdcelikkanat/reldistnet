@@ -173,7 +173,7 @@ class SynNetGen:
 
             raise ValueError("Invalid file format!")
 
-    def animate(self):
+    def animate(self, filepath=None):
 
         assert self._D == 2, "The dimension size must be 2!"
 
@@ -191,77 +191,91 @@ class SynNetGen:
         # Set the artistic features
         pos = nx.spring_layout(g, seed=self._seed)  # positions for all nodes
         background_color = 'white'
-        node_options = {"node_size": 300, "alpha": 0.25, "node_color": "gray", "linewidths": 0.75, "edgecolors": "k"}
-        node_label_options = {"font_size": 10, "font_color": 'k', "font_weight": 'bold'}
+        node_options = {"node_size": 200, "alpha": 0.25, "node_color": "gray", "linewidths": 0.85, "edgecolors": "k"}
+        node_label_options = {"font_size": 8, "font_color": 'k', "font_weight": 'normal'}
         edge_options = {"width": 1, "alpha": 0.125, "edge_color": 'gray', "arrows": False}
 
-
-        plt.figure(1)
-        fig, ax = plt.subplots(1, 1)
-        fig.set_facecolor(background_color)
+        # Determine the axis limits for the latent position figure
         margin = 0.1
-        xLeftLimit, yBelowLimit = np.min(pos.values(), axis=0)
-        xRightLimit, yTopLimit = np.max(pos.values(), axis=0)
-        # positions
+        xLeftLimit1, yBelowLimit1 = np.min(np.min(self._z)), np.min(np.min(self._z)) #np.min(np.min(self._z, axis=1), axis=0)
+        xRightLimit1, yTopLimit1 = np.max(np.max(self._z)), np.max(np.max(self._z)) #np.max(np.max(self._z, axis=1), axis=0)
+
+        # Determine the axis limits for the graph figure
+        xLeftLimit2, yBelowLimit2 = np.min(list(pos.values()), axis=0)
+        xRightLimit2, yTopLimit2 = np.max(list(pos.values()), axis=0)
+
+        fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        fig.set_facecolor(background_color)
 
         def init():
-            # Reset everything
-            ax.clear()
-            ax.set_facecolor(background_color)
+            # Reset
+            ax[0].clear()
+            ax[0].set_facecolor(background_color)
+            # Plot the latent positions
+            ax[0].plot(self._z[0][:, 0], self._z[0][:, 1], 'r.', alpha=0.75)
+
+            # Reset
+            ax[1].clear()
+            ax[1].set_facecolor(background_color)
             # Set the plot limits
-            ax.set_xlim(xLeftLimit - margin, xRightLimit + margin)
-            ax.set_ylim(yBelowLimit - margin, yTopLimit + margin)
+            ax[0].set_xlim(xLeftLimit1 - margin, xRightLimit1 + margin)
+            ax[0].set_ylim(yBelowLimit1 - margin, yTopLimit1 + margin)
+            ax[1].set_xlim(xLeftLimit2 - margin, xRightLimit2 + margin)
+            ax[1].set_ylim(yBelowLimit2 - margin, yTopLimit2 + margin)
 
             # draw nodes
-            nx.draw_networkx_nodes(g, pos, ax=ax, nodelist=nodelist, **node_options)
-            nx.draw_networkx_labels(g, pos, ax=ax, labels={node: str(node) for node in nodelist}, **node_label_options)
+            nx.draw_networkx_nodes(g, pos, ax=ax[1], nodelist=nodelist, **node_options)
+            nx.draw_networkx_labels(g, pos, ax=ax[1], labels={node: str(node) for node in nodelist}, **node_label_options)
             # draw edges
-            nx.draw_networkx_edges(g, pos, ax=ax, edgelist=self._edges[0], **edge_options)
+            nx.draw_networkx_edges(g, pos, ax=ax[1], edgelist=self._edges[0], **edge_options)
 
         def animate(t):
-            # x = np.linspace(0, 4, 1000)
-            # line.set_data(x, x)
-            #global walk, walkLen
-            #global black_nodes, red_nodes, black_edges, red_edges
-            #global pos, ax
-            #global xlim_left, xlim_right
 
-            # Reset everything
-            ax.clear()
-            ax.set_facecolor(background_color)
+            # Reset
+            ax[0].clear()
+            ax[0].set_facecolor(background_color)
+            # Plot the latent positions
+            ax[0].plot(self._z[t][:, 0], self._z[t][:, 1], 'r.', alpha=0.75)
+
+            ax[0].title.set_text('Latent Space')
+
+            # Reset
+            ax[1].clear()
+            ax[1].set_facecolor(background_color)
             # Set the plot limits
-            ax.set_xlim(xLeftLimit-margin, xRightLimit+margin)
-            ax.set_ylim(yBelowLimit-margin, yTopLimit+margin)
+            ax[0].set_xlim(xLeftLimit1 - margin, xRightLimit1 + margin)
+            ax[0].set_ylim(yBelowLimit1 - margin, yTopLimit1 + margin)
+            ax[1].set_xlim(xLeftLimit2 - margin, xRightLimit2 + margin)
+            ax[1].set_ylim(yBelowLimit2 - margin, yTopLimit2 + margin)
 
             # draw nodes
-            nx.draw_networkx_nodes(g, pos, ax=ax, nodelist=nodelist, **node_options)
-            nx.draw_networkx_labels(g, pos, ax=ax, labels={node: str(node) for node in nodelist}, **node_label_options)
+            nx.draw_networkx_nodes(g, pos, ax=ax[1], nodelist=nodelist, **node_options)
+            nx.draw_networkx_labels(g, pos, ax=ax[1], labels={node: str(node) for node in nodelist}, **node_label_options)
             # draw edges
-            nx.draw_networkx_edges(g, pos, ax=ax, edgelist=self._edges[t], **edge_options)
+            nx.draw_networkx_edges(g, pos, ax=ax[1], edgelist=self._edges[t], **edge_options)
 
-            # nx.draw_networkx_nodes(line, pos=linepos, ax=ax[1], nodelist=line.nodes(), **default_node_options)
-            # ax[1].clear()
-            #ax.text((xlim_left + xlim_right) / 2, -0.65,
-            #        r'\textbf{w}=( ' + r',  '.join([r"${}$".format("v_{" + str(w) + "}") for w in walk]) + r' )',
-            #        fontsize=18, horizontalalignment='center', )
+            ax[1].get_xaxis().set_ticks([])
+            ax[1].get_yaxis().set_ticks([])
+            ax[1].title.set_text('Graph Space')
+            ax[1].set_xlabel("Number of edges: {}".format(len(self._edges[t])))
+            # Remove the previous time text and add the new one
+            for txt in fig.texts:
+                txt.remove()
+            fig.text(0.5, 0.95, "Time: {}".format(t), horizontalalignment='center', fontsize=12)
 
+        anim = FuncAnimation(fig, animate, init_func=init, frames=self._T, interval=1000, )
 
+        if filepath is not None:
+            anim.save(filepath, writer='imagemagick', savefig_kwargs={"facecolor": background_color})
 
-            plt.axis('off')
-            #plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
-            #plt.margins(0, 0)
-            plt.title("Time: {}, Number of edges: {}".format(t, len(self._edges[t])))
-
-        anim = FuncAnimation(fig, animate, init_func=init, frames=self._T, interval=2000, )
-
-        anim.save('./anim.gif', writer='imagemagick', savefig_kwargs={"facecolor": background_color})
+        return anim
 
 if __name__ == '__main__':
 
     print(__file__)
 
     init_z = np.array([[-3, 0], [-2, -1], [-1, 0], [-2, 1], [1, 0], [2,-1], [3, 0], [2, 1]], dtype=np.float)
-    A = np.diag([2, 3]).astype(dtype=np.float)
+    A = np.diag([1.0001, 1.0003]).astype(dtype=np.float)
     beta = 2
     gamma = 4
     tau = 2
@@ -272,7 +286,6 @@ if __name__ == '__main__':
     sng.saveGraph(filePath=os.path.join('./networks/', filename))
 
     edges = sng.getEdgesAt(t=0)
-    print(len(edges))
-    #sng.animate()
+    sng.animate(filepath='./anim.gif')
     #k = sng._constructNetwork(lam=2, u=0, v=1)
 
