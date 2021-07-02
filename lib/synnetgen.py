@@ -247,11 +247,10 @@ class SynNetGen:
 
 
 
-            #plt.axis('off')
+            plt.axis('off')
             #plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
             #plt.margins(0, 0)
             plt.title("Time: {}, Number of edges: {}".format(t, len(self._edges[t])))
-
 
         anim = FuncAnimation(fig, animate, init_func=init, frames=self._T, interval=2000, )
 
@@ -274,7 +273,6 @@ if __name__ == '__main__':
 
     edges = sng.getEdgesAt(t=0)
     print(len(edges))
-    print(edges)
-    sng.animate()
+    #sng.animate()
     #k = sng._constructNetwork(lam=2, u=0, v=1)
 
