@@ -33,7 +33,7 @@ class SynNetGen:
         self._N = self._z[0].shape[0]
         self._D = self._z[0].shape[1]
 
-        self._nodePairs = np.triu_indices(n=self._N, k=0)
+        self._nodePairs = np.triu_indices(n=self._N, k=1)
 
         # Set the seed value
         np.random.seed(self._seed)
@@ -173,8 +173,89 @@ class SynNetGen:
 
             raise ValueError("Invalid file format!")
 
+    def animate(self):
+
+        assert self._D == 2, "The dimension size must be 2!"
+
+        # import the required packages
+        import networkx as nx
+        import matplotlib.pyplot as plt
+        from matplotlib.animation import FuncAnimation
+
+        nodelist = [v for v in range(self._N)]
+        edgelist = self._edges[0]
+        g = nx.Graph()
+        g.add_nodes_from(nodelist)
+        g.add_edges_from(edgelist)
+
+        # Set the artistic features
+        pos = nx.spring_layout(g, seed=self._seed)  # positions for all nodes
+        background_color = 'white'
+        node_options = {"node_size": 300, "alpha": 0.25, "node_color": "gray", "linewidths": 0.75, "edgecolors": "k"}
+        node_label_options = {"font_size": 10, "font_color": 'k', "font_weight": 'bold'}
+        edge_options = {"width": 1, "alpha": 0.125, "edge_color": 'gray', "arrows": False}
 
 
+        plt.figure(1)
+        fig, ax = plt.subplots(1, 1)
+        fig.set_facecolor(background_color)
+        margin = 0.1
+        xLeftLimit, yBelowLimit = np.min(pos.values(), axis=0)
+        xRightLimit, yTopLimit = np.max(pos.values(), axis=0)
+        # positions
+
+        def init():
+            # Reset everything
+            ax.clear()
+            ax.set_facecolor(background_color)
+            # Set the plot limits
+            ax.set_xlim(xLeftLimit - margin, xRightLimit + margin)
+            ax.set_ylim(yBelowLimit - margin, yTopLimit + margin)
+
+            # draw nodes
+            nx.draw_networkx_nodes(g, pos, ax=ax, nodelist=nodelist, **node_options)
+            nx.draw_networkx_labels(g, pos, ax=ax, labels={node: str(node) for node in nodelist}, **node_label_options)
+            # draw edges
+            nx.draw_networkx_edges(g, pos, ax=ax, edgelist=self._edges[0], **edge_options)
+
+        def animate(t):
+            # x = np.linspace(0, 4, 1000)
+            # line.set_data(x, x)
+            #global walk, walkLen
+            #global black_nodes, red_nodes, black_edges, red_edges
+            #global pos, ax
+            #global xlim_left, xlim_right
+
+            # Reset everything
+            ax.clear()
+            ax.set_facecolor(background_color)
+            # Set the plot limits
+            ax.set_xlim(xLeftLimit-margin, xRightLimit+margin)
+            ax.set_ylim(yBelowLimit-margin, yTopLimit+margin)
+
+            # draw nodes
+            nx.draw_networkx_nodes(g, pos, ax=ax, nodelist=nodelist, **node_options)
+            nx.draw_networkx_labels(g, pos, ax=ax, labels={node: str(node) for node in nodelist}, **node_label_options)
+            # draw edges
+            nx.draw_networkx_edges(g, pos, ax=ax, edgelist=self._edges[t], **edge_options)
+
+            # nx.draw_networkx_nodes(line, pos=linepos, ax=ax[1], nodelist=line.nodes(), **default_node_options)
+            # ax[1].clear()
+            #ax.text((xlim_left + xlim_right) / 2, -0.65,
+            #        r'\textbf{w}=( ' + r',  '.join([r"${}$".format("v_{" + str(w) + "}") for w in walk]) + r' )',
+            #        fontsize=18, horizontalalignment='center', )
+
+
+
+            #plt.axis('off')
+            #plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+            #plt.margins(0, 0)
+            plt.title("Time: {}, Number of edges: {}".format(t, len(self._edges[t])))
+
+
+        anim = FuncAnimation(fig, animate, init_func=init, frames=self._T, interval=2000, )
+
+        anim.save('./anim.gif', writer='imagemagick', savefig_kwargs={"facecolor": background_color})
 
 if __name__ == '__main__':
 
@@ -191,7 +272,9 @@ if __name__ == '__main__':
     filename = "graph_n={}_d={}_beta={}_gamma={}_tau={}_T={}.pkl".format(init_z.shape[0], init_z.shape[1], beta, gamma, tau, T)
     sng.saveGraph(filePath=os.path.join('./networks/', filename))
 
-    edges = sng.getEdgesAt(t=5)
+    edges = sng.getEdgesAt(t=0)
     print(len(edges))
+    print(edges)
+    sng.animate()
     #k = sng._constructNetwork(lam=2, u=0, v=1)
 
