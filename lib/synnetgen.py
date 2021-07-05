@@ -11,23 +11,26 @@ class SynNetGen:
         self._edges = []  # list of edge lists
         self._beta = []  # list of beta values
         self._gamma = []  # list of gamma values
-        self._A = A  # alpha, transition matrix
+        self._A = A  # alpha, a list of DxD transition matrix
         self._tau = tau  # lag parameter
         self._T = T  # maximum time step
         self._D = None  # latent space dimension
         self._seed = seed  # seed value
 
         # Check if the given parameters are valid or not
-        if type(init_z) is not np.ndarray:
+        if type(init_z) is not list:
+            init_z = [init_z]
+        if type(init_z[0]) is not np.ndarray:
             raise ValueError("Initial locations must be Numpy array!")
-        if init_z.ndim != 2:
+        if init_z[0].ndim != 2:
             raise ValueError("Initial locations must be a 2-dimensional array!")
 
 
         # Set the initial locations and hyper-parameters
-        self._z.append(init_z)
-        self._beta.append(init_beta)
-        self._gamma.append(init_gamma)
+        self._z.extend(init_z)
+        for _ in range(self._getCurrentTimeStep()):
+            self._beta.append(init_beta)
+            self._gamma.append(init_gamma)
 
         # Get the number of nodes and dimension size
         self._N = self._z[0].shape[0]
@@ -39,7 +42,8 @@ class SynNetGen:
         np.random.seed(self._seed)
 
         # Sample the initial network
-        self._edges.append(self._sampleEdgesAt(t=0))
+        for t in range(self._getCurrentTimeStep()):
+            self._edges.append(self._sampleEdgesAt(t=t))
 
         self._constructNetwork()
 
@@ -66,9 +70,10 @@ class SynNetGen:
     def _computeNextLatentPositions(self):
 
         next_z = np.zeros_like(self._getLatentPositionsAt(0))
-        currentTimeStep = self._getCurrentTimeStep()
-        for t in range(max(0, currentTimeStep-self._tau), currentTimeStep):
-            next_z += np.dot(self._getLatentPositionsAt(t), self._A)
+        lastTimeStep = self._getCurrentTimeStep()
+        startingTimeStep = max(0, lastTimeStep - self._tau)
+        for t in range(startingTimeStep, lastTimeStep):
+            next_z += np.dot(self._getLatentPositionsAt(t), self._A[t-startingTimeStep])
 
         return next_z
 
@@ -276,9 +281,10 @@ if __name__ == '__main__':
 
     init_z = np.array([[-3, 0], [-2, -1], [-1, 0], [-2, 1], [1, 0], [2,-1], [3, 0], [2, 1]], dtype=np.float)
     A = np.diag([1.0001, 1.0003]).astype(dtype=np.float)
+    A = [A, A, A]
     beta = 2
     gamma = 4
-    tau = 2
+    tau = 3
     T = 10
     sng = SynNetGen(init_z=init_z, init_beta=beta, init_gamma=gamma, A=A, tau=tau, T=T)
 
